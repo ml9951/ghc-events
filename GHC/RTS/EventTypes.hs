@@ -314,6 +314,15 @@ data EventInfo
                               receiverInport :: {-# UNPACK #-} !PortId
                             }
 
+  | StartTX {}
+  | EagerPartialAbort {}
+  | EagerFullAbort{}
+  | CommitTimePartialAbort{}
+  | CommitTimeFullAbort{}
+  | CommitTX{}
+
+
+
   -- These events have been added for Mercury's benifit but are generally
   -- useful.
   | InternString       { str :: String, sId :: {-# UNPACK #-}!StringId }

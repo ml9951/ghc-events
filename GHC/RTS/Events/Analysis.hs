@@ -147,8 +147,7 @@ data Profile s = Profile
   } deriving (Show)
 
 -- | This function takes a machine and profiles its state.
-profileM :: Ord s
-         => (i -> Timestamp)
+profileM :: (i -> Timestamp)
          -> Machine s i
          -> Machine (Profile s) i
 profileM timer machine = Machine
@@ -170,8 +169,7 @@ extractProfile :: (i -> Timestamp)                -- ^ Extracts current timestam
                -> Maybe (s, Timestamp, Timestamp) -- ^ (state, currentTime, elapsedTime)
 extractProfile timer p i = Just (profileState p, profileTime p, timer i - profileTime p)
 
-profile :: (Ord s, Eq s)
-        => Machine s i       -- ^ A machine to profile
+profile :: Machine s i       -- ^ A machine to profile
         -> (i -> Timestamp)  -- ^ Converts input to timestamps
         -> [i]               -- ^ The list of input
         -> Process (Profile s, i) (s, Timestamp, Timestamp)
@@ -179,7 +177,7 @@ profile machine timer =
   analyse (profileM timer machine)
           (extractProfile timer)
 
-profileIndexed :: (Ord k, Ord s, Eq s)
+profileIndexed :: Ord k
                => Machine s i
                -> (i -> Maybe k)
                -> (i -> Timestamp)
@@ -229,7 +227,7 @@ indexM index machine = Machine
     state' <- delta machine state i
     return $ M.insert k state' m
 
-profileRouted :: (Ord k, Ord s, Eq s, Eq r)
+profileRouted :: Ord k
               => Machine s i
               -> Machine r i
               -> (r -> i -> Maybe k)
