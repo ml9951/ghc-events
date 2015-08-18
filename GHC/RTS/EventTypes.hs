@@ -313,14 +313,15 @@ data EventInfo
                               receiverProcess :: {-# UNPACK #-} !ProcessId,
                               receiverInport :: {-# UNPACK #-} !PortId
                             }
-
+--BEGIN STM
   | StartTX {}
   | EagerPartialAbort {}
   | EagerFullAbort{}
   | CommitTimePartialAbort{}
   | CommitTimeFullAbort{}
   | CommitTX{}
-
+  | StartTXWInfo {info :: {-# UNPACK #-} !Word64}
+--END STM
 
 
   -- These events have been added for Mercury's benifit but are generally

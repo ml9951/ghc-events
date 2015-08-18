@@ -204,8 +204,9 @@
 #define EVENT_COMMIT_PARTIAL_ABORT 73
 #define EVENT_COMMIT_FULL_ABORT    74
 #define EVENT_COMMIT_TX            75
+#define EVENT_START_TX_WITH_INFO   76
 
-#define NUM_GHC_EVENT_TAGS        76
+#define NUM_GHC_EVENT_TAGS        77
 
 
 /* DEPRECATED EVENTS: */

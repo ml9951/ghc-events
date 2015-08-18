@@ -323,14 +323,16 @@ standardParsers = [
       str <- getString (num - sz_tid)
       return ThreadLabel{ thread      = tid
                         , threadlabel = str }
-    )), 
+    )),
+--BEGIN STM
  (simpleEvent EVENT_START_TX StartTX),
  (simpleEvent EVENT_EAGER_PARTIAL_ABORT EagerPartialAbort),
  (simpleEvent EVENT_EAGER_FULL_ABORT EagerFullAbort),
  (simpleEvent EVENT_COMMIT_PARTIAL_ABORT CommitTimePartialAbort),
  (simpleEvent EVENT_COMMIT_FULL_ABORT CommitTimeFullAbort),
- (simpleEvent EVENT_COMMIT_TX CommitTX)
- 
+ (simpleEvent EVENT_COMMIT_TX CommitTX),
+ (VariableSizeParser EVENT_START_TX_WITH_INFO (getE >>= \ info -> return $ StartTXWInfo{info=info}))
+--END STM 
  ]
 
 -- Parsers valid for GHC7 but not GHC6.
@@ -1046,12 +1048,15 @@ showEventInfo spec =
           receiverProcess receiverInport ->
             printf "sending/receiving message with tag %s from process %d, thread %d to process %d on inport %d"
             (show mesTag) senderProcess senderThread receiverProcess receiverInport
+--BEGIN STM
         StartTX -> printf "Start TX"
         EagerPartialAbort -> printf "Eager Partial Abort"
         EagerFullAbort -> printf "Eager Full Abort"
         CommitTimePartialAbort -> printf "Commit Time Partial Abort"
         CommitTimeFullAbort -> printf "Commit Time Full Abort"
         CommitTX -> "Committed Transaction"
+        StartTXWInfo info -> printf "Start TX (Tag = %lu)" info
+--END STM
         MerStartParConjunction dyn_id static_id ->
           printf "Start a parallel conjunction 0x%x, static_id: %d" dyn_id static_id
         MerEndParConjunction dyn_id ->
@@ -1260,12 +1265,15 @@ eventTypeNum e = case e of
     SendMessage {} -> EVENT_SEND_MESSAGE
     ReceiveMessage {} -> EVENT_RECEIVE_MESSAGE
     SendReceiveLocalMessage {} -> EVENT_SEND_RECEIVE_LOCAL_MESSAGE
+--BEGIN STM
     StartTX -> EVENT_START_TX
     EagerPartialAbort -> EVENT_EAGER_PARTIAL_ABORT
     EagerFullAbort -> EVENT_EAGER_FULL_ABORT
     CommitTimePartialAbort -> EVENT_COMMIT_PARTIAL_ABORT
     CommitTimeFullAbort -> EVENT_COMMIT_FULL_ABORT
     CommitTX -> EVENT_COMMIT_TX
+    StartTXWInfo{} -> EVENT_START_TX_WITH_INFO
+--END STM
     MerStartParConjunction {} -> EVENT_MER_START_PAR_CONJUNCTION
     MerEndParConjunction _ -> EVENT_MER_STOP_PAR_CONJUNCTION
     MerEndParConjunct _ -> EVENT_MER_STOP_PAR_CONJUNCT
@@ -1600,12 +1608,15 @@ putEventSpec ( SendReceiveLocalMessage mesTag senderProcess senderThread
     putE receiverProcess
     putE receiverInport
 
+--BEGIN STM
 putEventSpec (StartTX) = return()
 putEventSpec (EagerPartialAbort) = return()
 putEventSpec (EagerFullAbort) = return()
 putEventSpec (CommitTimePartialAbort) = return()
 putEventSpec (CommitTimeFullAbort) = return()
 putEventSpec (CommitTX) = return()
+putEventSpec (StartTXWInfo info) = putE info
+--END STM
 
 putEventSpec (MerStartParConjunction dyn_id static_id) = do
     putE dyn_id
