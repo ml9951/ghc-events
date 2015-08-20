@@ -320,6 +320,7 @@ data EventInfo
   | CommitTimePartialAbort{}
   | CommitTimeFullAbort{}
   | CommitTX{}
+  | BeginCommit{}
   | StartTXWInfo {info :: {-# UNPACK #-} !Word64}
 --END STM
 

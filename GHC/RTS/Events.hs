@@ -59,6 +59,7 @@ import Data.Either
 import Data.Maybe
 import Text.Printf
 import Data.Array
+import Data.Bits
 
 import GHC.RTS.EventTypes
 import GHC.RTS.EventParserUtils
@@ -331,7 +332,8 @@ standardParsers = [
  (simpleEvent EVENT_COMMIT_PARTIAL_ABORT CommitTimePartialAbort),
  (simpleEvent EVENT_COMMIT_FULL_ABORT CommitTimeFullAbort),
  (simpleEvent EVENT_COMMIT_TX CommitTX),
- (VariableSizeParser EVENT_START_TX_WITH_INFO (getE >>= \ info -> return $ StartTXWInfo{info=info}))
+ (simpleEvent EVENT_BEGIN_COMMIT BeginCommit),
+ (FixedSizeParser EVENT_START_TX_WITH_INFO 8 (getE >>= \ info -> return $ StartTXWInfo{info=info}))
 --END STM 
  ]
 
@@ -1049,13 +1051,20 @@ showEventInfo spec =
             printf "sending/receiving message with tag %s from process %d, thread %d to process %d on inport %d"
             (show mesTag) senderProcess senderThread receiverProcess receiverInport
 --BEGIN STM
-        StartTX -> printf "Start TX"
-        EagerPartialAbort -> printf "Eager Partial Abort"
-        EagerFullAbort -> printf "Eager Full Abort"
-        CommitTimePartialAbort -> printf "Commit Time Partial Abort"
-        CommitTimeFullAbort -> printf "Commit Time Full Abort"
-        CommitTX -> "Committed Transaction"
-        StartTXWInfo info -> printf "Start TX (Tag = %lu)" info
+        StartTX -> printf "TRANSACTIONAL MEMORY: Start TX"
+        EagerPartialAbort -> printf "TRANSACTIONAL MEMORY: Eager Partial Abort"
+        EagerFullAbort -> printf "TRANSACTIONAL MEMORY: Eager Full Abort"
+        CommitTimePartialAbort -> printf "TRANSACTIONAL MEMORY: Commit Time Partial Abort"
+        CommitTimeFullAbort -> printf "TRANSACTIONAL MEMORY: Commit Time Full Abort"
+        CommitTX -> "TRANSACTIONAL MEMORY: Committed Transaction"
+        BeginCommit -> "TRANSACTIONAL MEMORY: Begin Commit"
+        StartTXWInfo{info = info} ->
+                     let shift1 = -34 --parser doesn't seem to like manually inlining this
+                         shift2 = -4
+                         highBits = shift (info) shift1
+                         lowBits = shift (info .&. 17179869183) shift2
+                         tag = info .&. 15
+                     in printf "TRANSACTIONAL MEMORY: Start TX (info = %lu) (highBits = %lu) (lowBits = %lu) (tag = %lu)" info highBits lowBits tag
 --END STM
         MerStartParConjunction dyn_id static_id ->
           printf "Start a parallel conjunction 0x%x, static_id: %d" dyn_id static_id
@@ -1272,6 +1281,7 @@ eventTypeNum e = case e of
     CommitTimePartialAbort -> EVENT_COMMIT_PARTIAL_ABORT
     CommitTimeFullAbort -> EVENT_COMMIT_FULL_ABORT
     CommitTX -> EVENT_COMMIT_TX
+    BeginCommit -> EVENT_BEGIN_COMMIT
     StartTXWInfo{} -> EVENT_START_TX_WITH_INFO
 --END STM
     MerStartParConjunction {} -> EVENT_MER_START_PAR_CONJUNCTION
@@ -1615,6 +1625,7 @@ putEventSpec (EagerFullAbort) = return()
 putEventSpec (CommitTimePartialAbort) = return()
 putEventSpec (CommitTimeFullAbort) = return()
 putEventSpec (CommitTX) = return()
+putEventSpec (BeginCommit) = return()
 putEventSpec (StartTXWInfo info) = putE info
 --END STM
 

@@ -197,7 +197,6 @@
  * This must match the size of the EventDesc[] array in EventLog.c
  */
 
-
 #define EVENT_START_TX             70
 #define EVENT_EAGER_PARTIAL_ABORT  71
 #define EVENT_EAGER_FULL_ABORT     72
@@ -205,9 +204,9 @@
 #define EVENT_COMMIT_FULL_ABORT    74
 #define EVENT_COMMIT_TX            75
 #define EVENT_START_TX_WITH_INFO   76
+#define EVENT_BEGIN_COMMIT         77
 
-#define NUM_GHC_EVENT_TAGS        77
-
+#define NUM_GHC_EVENT_TAGS        78
 
 /* DEPRECATED EVENTS: */
 /* These two are deprecated because we don't need to record the thread, it's
