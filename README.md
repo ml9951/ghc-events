@@ -1,15 +1,15 @@
-This is a modified version of GHC Events that adds support for STM Events
+This is a modified version of GHC Events that adds support for
+Manticore events
 ============================
 
 To install:
  
     git clone https://github.com/ml9951/ghc-events.git
-    git checkout stm
+    git checkout manticore-events
     cabal install
 
-You should then be able to build ThreadScope to visualize STM events
+You should then be able to build ThreadScope to visualize Manticore events
 
-If you would like to extend ghc-events, I have
-delimited all of my changes with "BEGIN STM" and "END STM" comments,
-which should serve as a helpful guideline when determining what needs
-to be modified in order to add a new event.
+Note that you will have to install this package prior to installing
+ThreadScope so that it uses *this* package instead of downloading the
+mainstream version on Hackage
