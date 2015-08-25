@@ -20,7 +20,7 @@ To add a new event, you must modify the following files and functions:
 * EventLogFormat.h -- add new #define for each new event
 * EventTypes.hs  -- add new type for event
 * Events.hs -- modify the following functions
-..* showEventInfo
-..* eventTypeNum
-..* putEventSpec
-..* standardParsers
+  * showEventInfo
+  * eventTypeNum
+  * putEventSpec
+  * standardParsers
