@@ -151,6 +151,8 @@ standardParsers = [
    )),
 
 
+ 
+
  (simpleEvent EVENT_GC_START StartGC),
  (simpleEvent EVENT_GC_END EndGC), 
 
@@ -161,10 +163,34 @@ standardParsers = [
  (simpleEvent EVENT_COMMIT_PARTIAL_ABORT CommitTimePartialAbort),
  (simpleEvent EVENT_COMMIT_FULL_ABORT CommitTimeFullAbort),
  (simpleEvent EVENT_COMMIT_TX CommitTX),
+ (simpleEvent EVENT_FAST_FORWARD FastForward),
  (simpleEvent EVENT_BEGIN_COMMIT BeginCommit),
- (FixedSizeParser EVENT_START_TX_WITH_INFO 8 (getE >>= \ info -> return $ StartTXWInfo{info=info}))
---END STM 
+ (FixedSizeParser EVENT_START_TX_WITH_INFO 8 (getE >>= \ info -> return $ StartTXWInfo{info=info})),
+--END STM
+
+ (simpleEvent EVENT_MAJOR_GC MajorGC),
+ (simpleEvent EVENT_GLOBAL_GC GlobalGC),
+
+ (FixedSizeParser EVENT_RUN_THREAD sz_tid (getE >>= \info -> return $ RunThread{thread=info})),
+ (FixedSizeParser EVENT_STOP_THREAD (sz_tid + sz_th_stop_status) (do
+      -- (thread, status)
+      t <- getE
+      s <- getE :: GetEvents RawThreadStopStatus
+      return StopThread{thread=t, status = if s > maxThreadStopStatusPre77
+                                              then NoStatus
+                                              else mkStopStatus s}
+                        -- older version of the event, no block info
+   ))                   
  ]
+
+
+{-
+  | RunThread          { thread :: {-# UNPACK #-}!ThreadId
+                       }
+  | StopThread         { thread :: {-# UNPACK #-}!ThreadId,
+                         status :: ThreadStopStatus
+                       }
+-}
 
 -- Parsers valid for GHC7 but not GHC6.
 ghc7Parsers :: [EventParser EventInfo]
@@ -483,7 +509,8 @@ showEventInfo spec =
         EagerFullAbort -> printf "TRANSACTIONAL MEMORY: Eager Full Abort"
         CommitTimePartialAbort -> printf "TRANSACTIONAL MEMORY: Commit Time Partial Abort"
         CommitTimeFullAbort -> printf "TRANSACTIONAL MEMORY: Commit Time Full Abort"
-        CommitTX -> "TRANSACTIONAL MEMORY: Committed Transaction"
+        CommitTX -> printf "TRANSACTIONAL MEMORY: Committed Transaction"
+        FastForward -> printf "TRANSACTIONAL MEMORTY: Fast Forward"
         BeginCommit -> "TRANSACTIONAL MEMORY: Begin Commit"
         StartTXWInfo{info = info} ->
                      let shift1 = -34 --parser doesn't seem to like manually inlining this
@@ -493,6 +520,10 @@ showEventInfo spec =
                          tag = info .&. 15
                      in printf "TRANSACTIONAL MEMORY: Start TX (info = %lu) (highBits = %lu) (lowBits = %lu) (tag = %lu)" info highBits lowBits tag
 --END STM
+
+        MajorGC -> printf "Started Major GC"
+        GlobalGC -> printf "Started Global GC"
+
         MerStartParConjunction dyn_id static_id ->
           printf "Start a parallel conjunction 0x%x, static_id: %d" dyn_id static_id
         MerEndParConjunction dyn_id ->
@@ -645,9 +676,13 @@ eventTypeNum e = case e of
     CommitTimePartialAbort -> EVENT_COMMIT_PARTIAL_ABORT
     CommitTimeFullAbort -> EVENT_COMMIT_FULL_ABORT
     CommitTX -> EVENT_COMMIT_TX
+    FastForward -> EVENT_FAST_FORWARD
     BeginCommit -> EVENT_BEGIN_COMMIT
     StartTXWInfo{} -> EVENT_START_TX_WITH_INFO
 --END STM
+
+    MajorGC -> EVENT_MAJOR_GC
+    GlobalGC -> EVENT_GLOBAL_GC
 
 
 putEvent :: Event -> PutEvents ()
@@ -968,9 +1003,13 @@ putEventSpec (EagerFullAbort) = return()
 putEventSpec (CommitTimePartialAbort) = return()
 putEventSpec (CommitTimeFullAbort) = return()
 putEventSpec (CommitTX) = return()
+putEventSpec (FastForward) = return()
 putEventSpec (BeginCommit) = return()
 putEventSpec (StartTXWInfo info) = putE info
 --END STM
+
+putEventSpec (MajorGC) = return()
+putEventSpec (GlobalGC) = return()
 
 putEventSpec (MerStartParConjunction dyn_id static_id) = do
     putE dyn_id

@@ -321,8 +321,12 @@ data EventInfo
   | CommitTimeFullAbort{}
   | CommitTX{}
   | BeginCommit{}
+  | FastForward{}
   | StartTXWInfo {info :: {-# UNPACK #-} !Word64}
 --END STM
+
+  | MajorGC {}
+  | GlobalGC {}
 
 
   -- These events have been added for Mercury's benifit but are generally

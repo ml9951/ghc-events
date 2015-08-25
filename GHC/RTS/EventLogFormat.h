@@ -111,13 +111,18 @@
 #define EVENT_BEGIN_COMMIT         10
 #define EVENT_BLOCK_MARKER         11 /* (size, end_time, capability) */
 #define EVENT_STARTUP              12 /* (num_capabilities)     */
-
+#define EVENT_RUN_THREAD           13 /* (thread)               */
+#define EVENT_STOP_THREAD          14 /* (thread, status, blockinfo) */
+/*No EVENT_MINOR_GC, EVENT_GC_START implies a minor GC*/
+#define EVENT_MAJOR_GC             15
+#define EVENT_GLOBAL_GC            16
+#define EVENT_FAST_FORWARD         17
 /*
  * The highest event code +1 that ghc itself emits. Note that some event
  * ranges higher than this are reserved but not currently emitted by ghc.
  * This must match the size of the EventDesc[] array in EventLog.c
  */
-#define NUM_GHC_EVENT_TAGS        13
+#define NUM_GHC_EVENT_TAGS        18
 
 /*
  * Status values for EVENT_STOP_THREAD

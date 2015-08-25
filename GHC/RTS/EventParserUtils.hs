@@ -126,7 +126,7 @@ mkEventTypeParsers etypes event_parsers
     -- [ (num, parser num etype) | (num, etype) <- M.toList etypes ])
   where
     max_event_num = maximum (M.keys etypes)
-    undeclared_etype num = throwError ("undeclared event type: " ++ show num)
+    undeclared_etype num = throwError ("undeclared event type: " ++ show num ++ ", max_event_num = " ++ show max_event_num)
     parser_map = makeParserMap event_parsers
     parser num =
             -- Get the event's size from the header,
