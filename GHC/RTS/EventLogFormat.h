@@ -117,12 +117,14 @@
 #define EVENT_MAJOR_GC             15
 #define EVENT_GLOBAL_GC            16
 #define EVENT_FAST_FORWARD         17
+#define EVENT_REMEMBER_OBJ         18
+
 /*
  * The highest event code +1 that ghc itself emits. Note that some event
  * ranges higher than this are reserved but not currently emitted by ghc.
  * This must match the size of the EventDesc[] array in EventLog.c
  */
-#define NUM_GHC_EVENT_TAGS        18
+#define NUM_GHC_EVENT_TAGS        19
 
 /*
  * Status values for EVENT_STOP_THREAD

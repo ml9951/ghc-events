@@ -156,11 +156,16 @@ standardParsers = [
  (simpleEvent EVENT_GC_START StartGC),
  (simpleEvent EVENT_GC_END EndGC), 
 
+ (FixedSizeParser EVENT_REMEMBER_OBJ 8 (getE >>= \info -> return $ RememberObj{addr = info})),
+
 --BEGIN STM
+ (FixedSizeParser EVENT_EAGER_PARTIAL_ABORT 4 (getE >>= \info -> return $ EagerPartialAbort{abortInfo=info})),
+ (FixedSizeParser EVENT_COMMIT_PARTIAL_ABORT 4 (getE >>= \info -> return $ CommitTimePartialAbort{abortInfo=info})),
+ 
  (simpleEvent EVENT_START_TX StartTX),
- (simpleEvent EVENT_EAGER_PARTIAL_ABORT EagerPartialAbort),
+-- (simpleEvent EVENT_EAGER_PARTIAL_ABORT EagerPartialAbort),
  (simpleEvent EVENT_EAGER_FULL_ABORT EagerFullAbort),
- (simpleEvent EVENT_COMMIT_PARTIAL_ABORT CommitTimePartialAbort),
+-- (simpleEvent EVENT_COMMIT_PARTIAL_ABORT CommitTimePartialAbort),
  (simpleEvent EVENT_COMMIT_FULL_ABORT CommitTimeFullAbort),
  (simpleEvent EVENT_COMMIT_TX CommitTX),
  (simpleEvent EVENT_FAST_FORWARD FastForward),
@@ -505,9 +510,9 @@ showEventInfo spec =
             (show mesTag) senderProcess senderThread receiverProcess receiverInport
 --BEGIN STM
         StartTX -> printf "TRANSACTIONAL MEMORY: Start TX"
-        EagerPartialAbort -> printf "TRANSACTIONAL MEMORY: Eager Partial Abort"
+        EagerPartialAbort{abortInfo=abortInfo} -> printf "TRANSACTIONAL MEMORY: Eager and Partially Aborted to position %d" abortInfo
         EagerFullAbort -> printf "TRANSACTIONAL MEMORY: Eager Full Abort"
-        CommitTimePartialAbort -> printf "TRANSACTIONAL MEMORY: Commit Time Partial Abort"
+        CommitTimePartialAbort{abortInfo=abortInfo} -> printf "TRANSACTIONAL MEMORY: Partially Aborted (at commit time) to position %d" abortInfo
         CommitTimeFullAbort -> printf "TRANSACTIONAL MEMORY: Commit Time Full Abort"
         CommitTX -> printf "TRANSACTIONAL MEMORY: Committed Transaction"
         FastForward -> printf "TRANSACTIONAL MEMORTY: Fast Forward"
@@ -520,6 +525,8 @@ showEventInfo spec =
                          tag = info .&. 15
                      in printf "TRANSACTIONAL MEMORY: Start TX (info = %lu) (highBits = %lu) (lowBits = %lu) (tag = %lu)" info highBits lowBits tag
 --END STM
+
+        RememberObj{addr = addr} -> printf "Added 0x%x to remember set" addr
 
         MajorGC -> printf "Started Major GC"
         GlobalGC -> printf "Started Global GC"
@@ -671,15 +678,17 @@ eventTypeNum e = case e of
     Startup {} -> EVENT_STARTUP
 --BEGIN STM
     StartTX -> EVENT_START_TX
-    EagerPartialAbort -> EVENT_EAGER_PARTIAL_ABORT
+    EagerPartialAbort {abortInfo} -> EVENT_EAGER_PARTIAL_ABORT
     EagerFullAbort -> EVENT_EAGER_FULL_ABORT
-    CommitTimePartialAbort -> EVENT_COMMIT_PARTIAL_ABORT
+    CommitTimePartialAbort {abortInfo} -> EVENT_COMMIT_PARTIAL_ABORT
     CommitTimeFullAbort -> EVENT_COMMIT_FULL_ABORT
     CommitTX -> EVENT_COMMIT_TX
     FastForward -> EVENT_FAST_FORWARD
     BeginCommit -> EVENT_BEGIN_COMMIT
     StartTXWInfo{} -> EVENT_START_TX_WITH_INFO
 --END STM
+
+    RememberObj {} -> EVENT_REMEMBER_OBJ
 
     MajorGC -> EVENT_MAJOR_GC
     GlobalGC -> EVENT_GLOBAL_GC
@@ -998,15 +1007,17 @@ putEventSpec ( SendReceiveLocalMessage mesTag senderProcess senderThread
 
 --BEGIN STM
 putEventSpec (StartTX) = return()
-putEventSpec (EagerPartialAbort) = return()
+putEventSpec (EagerPartialAbort abortInfo) = putE abortInfo
 putEventSpec (EagerFullAbort) = return()
-putEventSpec (CommitTimePartialAbort) = return()
+putEventSpec (CommitTimePartialAbort abortInfo) = putE abortInfo
 putEventSpec (CommitTimeFullAbort) = return()
 putEventSpec (CommitTX) = return()
 putEventSpec (FastForward) = return()
 putEventSpec (BeginCommit) = return()
 putEventSpec (StartTXWInfo info) = putE info
 --END STM
+
+putEventSpec (RememberObj addr) = putE addr
 
 putEventSpec (MajorGC) = return()
 putEventSpec (GlobalGC) = return()

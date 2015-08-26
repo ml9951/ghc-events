@@ -315,15 +315,17 @@ data EventInfo
                             }
 --BEGIN STM
   | StartTX {}
-  | EagerPartialAbort {}
+  | EagerPartialAbort {abortInfo :: {-# UNPACK #-} !Word32}
   | EagerFullAbort{}
-  | CommitTimePartialAbort{}
+  | CommitTimePartialAbort{abortInfo :: {-# UNPACK #-} !Word32}
   | CommitTimeFullAbort{}
   | CommitTX{}
   | BeginCommit{}
   | FastForward{}
   | StartTXWInfo {info :: {-# UNPACK #-} !Word64}
 --END STM
+
+  | RememberObj{addr :: {-# UNPACK #-} !Word64}
 
   | MajorGC {}
   | GlobalGC {}
