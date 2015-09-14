@@ -316,9 +316,9 @@ data EventInfo
 --BEGIN STM
   | StartTX {}
   | EagerPartialAbort {abortInfo :: {-# UNPACK #-} !Word32}
-  | EagerFullAbort{}
+  | EagerFullAbort{abortInfo :: {-# UNPACK #-} !Word32}
   | CommitTimePartialAbort{abortInfo :: {-# UNPACK #-} !Word32}
-  | CommitTimeFullAbort{}
+  | CommitTimeFullAbort{abortInfo :: {-# UNPACK #-} !Word32}
   | CommitTX{}
   | BeginCommit{}
   | FastForward{}

@@ -161,12 +161,11 @@ standardParsers = [
 --BEGIN STM
  (FixedSizeParser EVENT_EAGER_PARTIAL_ABORT 4 (getE >>= \info -> return $ EagerPartialAbort{abortInfo=info})),
  (FixedSizeParser EVENT_COMMIT_PARTIAL_ABORT 4 (getE >>= \info -> return $ CommitTimePartialAbort{abortInfo=info})),
- 
+
+ (FixedSizeParser EVENT_EAGER_FULL_ABORT 4 (getE >>= \info -> return $ EagerFullAbort{abortInfo=info})),
+ (FixedSizeParser EVENT_COMMIT_FULL_ABORT 4 (getE >>= \info -> return $ CommitTimeFullAbort{abortInfo=info})),  
+
  (simpleEvent EVENT_START_TX StartTX),
--- (simpleEvent EVENT_EAGER_PARTIAL_ABORT EagerPartialAbort),
- (simpleEvent EVENT_EAGER_FULL_ABORT EagerFullAbort),
--- (simpleEvent EVENT_COMMIT_PARTIAL_ABORT CommitTimePartialAbort),
- (simpleEvent EVENT_COMMIT_FULL_ABORT CommitTimeFullAbort),
  (simpleEvent EVENT_COMMIT_TX CommitTX),
  (simpleEvent EVENT_FAST_FORWARD FastForward),
  (simpleEvent EVENT_BEGIN_COMMIT BeginCommit),
@@ -512,9 +511,9 @@ showEventInfo spec =
 --BEGIN STM
         StartTX -> printf "TRANSACTIONAL MEMORY: Start TX"
         EagerPartialAbort{abortInfo=abortInfo} -> printf "TRANSACTIONAL MEMORY: Eager and Partially Aborted to position %d" abortInfo
-        EagerFullAbort -> printf "TRANSACTIONAL MEMORY: Eager Full Abort"
+        EagerFullAbort{abortInfo=abortInfo} -> printf "TRANSACTIONAL MEMORY: Eager Full Abort %d" abortInfo
         CommitTimePartialAbort{abortInfo=abortInfo} -> printf "TRANSACTIONAL MEMORY: Partially Aborted (at commit time) to position %d" abortInfo
-        CommitTimeFullAbort -> printf "TRANSACTIONAL MEMORY: Commit Time Full Abort"
+        CommitTimeFullAbort{abortInfo=abortInfo} -> printf "TRANSACTIONAL MEMORY: Commit Time Full Abort %d" abortInfo
         CommitTX -> printf "TRANSACTIONAL MEMORY: Committed Transaction"
         FastForward -> printf "TRANSACTIONAL MEMORY: Fast Forward"
         BeginCommit -> "TRANSACTIONAL MEMORY: Begin Commit"
@@ -681,9 +680,9 @@ eventTypeNum e = case e of
 --BEGIN STM
     StartTX -> EVENT_START_TX
     EagerPartialAbort {abortInfo} -> EVENT_EAGER_PARTIAL_ABORT
-    EagerFullAbort -> EVENT_EAGER_FULL_ABORT
+    EagerFullAbort{abortInfo} -> EVENT_EAGER_FULL_ABORT
     CommitTimePartialAbort {abortInfo} -> EVENT_COMMIT_PARTIAL_ABORT
-    CommitTimeFullAbort -> EVENT_COMMIT_FULL_ABORT
+    CommitTimeFullAbort{abortInfo} -> EVENT_COMMIT_FULL_ABORT
     CommitTX -> EVENT_COMMIT_TX
     FastForward -> EVENT_FAST_FORWARD
     BeginCommit -> EVENT_BEGIN_COMMIT
@@ -1011,9 +1010,9 @@ putEventSpec ( SendReceiveLocalMessage mesTag senderProcess senderThread
 --BEGIN STM
 putEventSpec (StartTX) = return()
 putEventSpec (EagerPartialAbort abortInfo) = putE abortInfo
-putEventSpec (EagerFullAbort) = return()
+putEventSpec (EagerFullAbort abortInfo) = putE abortInfo
 putEventSpec (CommitTimePartialAbort abortInfo) = putE abortInfo
-putEventSpec (CommitTimeFullAbort) = return()
+putEventSpec (CommitTimeFullAbort abortInfo) = putE abortInfo
 putEventSpec (CommitTX) = return()
 putEventSpec (FastForward) = return()
 putEventSpec (BeginCommit) = return()
