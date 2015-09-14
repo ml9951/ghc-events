@@ -118,6 +118,7 @@
 #define EVENT_GLOBAL_GC            16
 #define EVENT_FAST_FORWARD         17
 #define EVENT_REMEMBER_OBJ         18
+#define EVENT_TS_EXTENSION               19
 
 /*
  * The highest event code +1 that ghc itself emits. Note that some event

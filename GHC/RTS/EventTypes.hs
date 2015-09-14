@@ -323,6 +323,7 @@ data EventInfo
   | BeginCommit{}
   | FastForward{}
   | StartTXWInfo {info :: {-# UNPACK #-} !Word64}
+  | TSExtension {}
 --END STM
 
   | RememberObj{addr :: {-# UNPACK #-} !Word64}

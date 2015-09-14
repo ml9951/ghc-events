@@ -171,6 +171,7 @@ standardParsers = [
  (simpleEvent EVENT_FAST_FORWARD FastForward),
  (simpleEvent EVENT_BEGIN_COMMIT BeginCommit),
  (FixedSizeParser EVENT_START_TX_WITH_INFO 8 (getE >>= \ info -> return $ StartTXWInfo{info=info})),
+ (simpleEvent EVENT_TS_EXTENSION TSExtension),
 --END STM
 
  (simpleEvent EVENT_MAJOR_GC MajorGC),
@@ -515,7 +516,7 @@ showEventInfo spec =
         CommitTimePartialAbort{abortInfo=abortInfo} -> printf "TRANSACTIONAL MEMORY: Partially Aborted (at commit time) to position %d" abortInfo
         CommitTimeFullAbort -> printf "TRANSACTIONAL MEMORY: Commit Time Full Abort"
         CommitTX -> printf "TRANSACTIONAL MEMORY: Committed Transaction"
-        FastForward -> printf "TRANSACTIONAL MEMORTY: Fast Forward"
+        FastForward -> printf "TRANSACTIONAL MEMORY: Fast Forward"
         BeginCommit -> "TRANSACTIONAL MEMORY: Begin Commit"
         StartTXWInfo{info = info} ->
                      let shift1 = -34 --parser doesn't seem to like manually inlining this
@@ -524,6 +525,7 @@ showEventInfo spec =
                          lowBits = shift (info .&. 17179869183) shift2
                          tag = info .&. 15
                      in printf "TRANSACTIONAL MEMORY: Start TX (info = %lu) (highBits = %lu) (lowBits = %lu) (tag = %lu)" info highBits lowBits tag
+        TSExtension -> printf "TRANSACTIONAL MEMORY: Timestamp Extension"
 --END STM
 
         RememberObj{addr = addr} -> printf "Added 0x%x to remember set" addr
@@ -686,6 +688,7 @@ eventTypeNum e = case e of
     FastForward -> EVENT_FAST_FORWARD
     BeginCommit -> EVENT_BEGIN_COMMIT
     StartTXWInfo{} -> EVENT_START_TX_WITH_INFO
+    TSExtension{} -> EVENT_TS_EXTENSION
 --END STM
 
     RememberObj {} -> EVENT_REMEMBER_OBJ
@@ -1015,6 +1018,7 @@ putEventSpec (CommitTX) = return()
 putEventSpec (FastForward) = return()
 putEventSpec (BeginCommit) = return()
 putEventSpec (StartTXWInfo info) = putE info
+putEventSpec (TSExtension) = return()
 --END STM
 
 putEventSpec (RememberObj addr) = putE addr
