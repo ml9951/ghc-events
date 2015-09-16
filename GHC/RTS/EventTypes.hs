@@ -321,7 +321,7 @@ data EventInfo
   | CommitTimeFullAbort{abortInfo :: {-# UNPACK #-} !Word32}
   | CommitTX{}
   | BeginCommit{}
-  | FastForward{}
+  | FastForward{abortInfo :: {-# UNPACK #-} !Word32} --records are terrible, we have to name the field uniquely or a name that is also 32 bits
   | StartTXWInfo {info :: {-# UNPACK #-} !Word64}
   | TSExtension {}
 --END STM

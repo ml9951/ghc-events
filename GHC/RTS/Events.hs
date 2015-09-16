@@ -164,10 +164,10 @@ standardParsers = [
 
  (FixedSizeParser EVENT_EAGER_FULL_ABORT 4 (getE >>= \info -> return $ EagerFullAbort{abortInfo=info})),
  (FixedSizeParser EVENT_COMMIT_FULL_ABORT 4 (getE >>= \info -> return $ CommitTimeFullAbort{abortInfo=info})),  
-
+ (FixedSizeParser EVENT_FAST_FORWARD 4 (getE >>= \info -> return $ FastForward{abortInfo=info})),
+ 
  (simpleEvent EVENT_START_TX StartTX),
  (simpleEvent EVENT_COMMIT_TX CommitTX),
- (simpleEvent EVENT_FAST_FORWARD FastForward),
  (simpleEvent EVENT_BEGIN_COMMIT BeginCommit),
  (FixedSizeParser EVENT_START_TX_WITH_INFO 8 (getE >>= \ info -> return $ StartTXWInfo{info=info})),
  (simpleEvent EVENT_TS_EXTENSION TSExtension),
@@ -515,7 +515,7 @@ showEventInfo spec =
         CommitTimePartialAbort{abortInfo=abortInfo} -> printf "TRANSACTIONAL MEMORY: Partially Aborted (at commit time) to position %d" abortInfo
         CommitTimeFullAbort{abortInfo=abortInfo} -> printf "TRANSACTIONAL MEMORY: Commit Time Full Abort %d" abortInfo
         CommitTX -> printf "TRANSACTIONAL MEMORY: Committed Transaction"
-        FastForward -> printf "TRANSACTIONAL MEMORY: Fast Forward"
+        FastForward {abortInfo=info} -> printf "TRANSACTIONAL MEMORY: Fast Forward %d" info
         BeginCommit -> "TRANSACTIONAL MEMORY: Begin Commit"
         StartTXWInfo{info = info} ->
                      let shift1 = -34 --parser doesn't seem to like manually inlining this
@@ -684,7 +684,7 @@ eventTypeNum e = case e of
     CommitTimePartialAbort {abortInfo} -> EVENT_COMMIT_PARTIAL_ABORT
     CommitTimeFullAbort{abortInfo} -> EVENT_COMMIT_FULL_ABORT
     CommitTX -> EVENT_COMMIT_TX
-    FastForward -> EVENT_FAST_FORWARD
+    FastForward{abortInfo} -> EVENT_FAST_FORWARD
     BeginCommit -> EVENT_BEGIN_COMMIT
     StartTXWInfo{} -> EVENT_START_TX_WITH_INFO
     TSExtension{} -> EVENT_TS_EXTENSION
@@ -1014,7 +1014,7 @@ putEventSpec (EagerFullAbort abortInfo) = putE abortInfo
 putEventSpec (CommitTimePartialAbort abortInfo) = putE abortInfo
 putEventSpec (CommitTimeFullAbort abortInfo) = putE abortInfo
 putEventSpec (CommitTX) = return()
-putEventSpec (FastForward) = return()
+putEventSpec (FastForward abortInfo) = putE abortInfo
 putEventSpec (BeginCommit) = return()
 putEventSpec (StartTXWInfo info) = putE info
 putEventSpec (TSExtension) = return()
